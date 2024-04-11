@@ -1,0 +1,107 @@
+C51 COMPILER V9.60.0.0   ECHO                                                              04/11/2024 23:35:07 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ECHO
+OBJECT MODULE PLACED IN .\Objects\echo.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE echo.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\echo
+                    -.lst) OBJECT(.\Objects\echo.obj)
+
+line level    source
+
+   1          #include "echo.h"
+   2          
+   3          sbit trig=P1^0;
+   4          sbit echo=P1^1;
+   5          
+   6          void Delay14us()                //@12.000MHz
+   7          {
+   8   1              unsigned char i;
+   9   1      
+  10   1              _nop_();
+  11   1              _nop_();
+  12   1              i = 42;
+  13   1              while (--i);
+  14   1      }
+  15          
+  16          
+  17          void send_wave()
+  18          {
+  19   1              unsigned char i=0;
+  20   1              
+  21   1              for(i=0;i<8;i++)
+  22   1              {
+  23   2                      trig=1;
+  24   2                      Delay14us();
+  25   2                      trig=0;
+  26   2                      Delay14us();
+  27   2              }
+  28   1      }
+  29          
+  30          unsigned int Get_Csb()
+  31          {
+  32   1              
+  33   1              unsigned int dis;
+  34   1              CMOD&=0x00;   //1mhz
+  35   1      //      CH=0x00;      //计数高八位定时12T10001us
+  36   1      //      CL=0x00;      //计数低八位
+  37   1              CH=0x8D;      //计数高八位定时12T10001us
+  38   1              CL=0x1C;      //计数低八位
+  39   1              Send_Wave();  //发送40Khz波
+*** WARNING C206 IN LINE 39 OF echo.c: 'Send_Wave': missing function-prototype
+  40   1              CR=1;     //开始计时
+  41   1              while((echo==1)&&(CF==0));//等待接收端接收到返回信号或者溢出
+  42   1              CR=0; //关闭计时
+  43   1              if(CF==0) //如果未超出测量范围，进行数据处理
+  44   1              {
+  45   2                      //dis=((CH << 8 | CL)-0x8D1C) * 0.017;//cm
+  46   2                      dis=(unsigned int)((CH << 8 | CL)-0x8d1c) * 0.017;//cm
+  47   2              }
+  48   1              else  //如果超出测量范围，溢出标志位会硬件置一，我们需要在此软件清零
+  49   1              {
+  50   2                  CF=0;  //溢出标志位清零
+  51   2                      dis=0;
+  52   2              }
+  53   1              return  dis;
+C51 COMPILER V9.60.0.0   ECHO                                                              04/11/2024 23:35:07 PAGE 2   
+
+  54   1      }
+  55          
+  56          unsigned int read_echo()
+  57          {
+  58   1              unsigned int dis=0;
+  59   1              
+  60   1              CMOD&=0x00;
+  61   1              CH=0x00;
+  62   1              CL=0x00;
+  63   1              send_wave();
+  64   1              CR=1;
+  65   1              while(echo==1&&CF==0);
+  66   1              CR=0;
+  67   1              
+  68   1              if(CF==0)
+  69   1              {
+  70   2                      dis=((unsigned int)(CH<<8|CL))*0.017;
+  71   2              }
+  72   1              else
+  73   1              {
+  74   2                      CF=0;
+  75   2                      dis=0;
+  76   2                      
+  77   2              }
+  78   1              
+  79   1              return dis;
+  80   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    177    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

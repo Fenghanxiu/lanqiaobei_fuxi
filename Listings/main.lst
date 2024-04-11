@@ -1,0 +1,349 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              04/11/2024 23:35:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <STC15F2K60S2.H>
+   2          #include "hardware.h"
+   3          #include "ds1302.h"
+   4          #include "iic.h"
+   5          #include "uart.h"
+   6          #include "echo.h"
+   7          #include "onewire.h"
+   8          
+   9          #include <stdio.h>
+  10          #include <string.h>
+  11          
+  12          void main()
+  13          {
+  14   1              unsigned char xdata screen=0;
+  15   1              unsigned char xdata work_flag=0;
+  16   1              
+  17   1              unsigned int xdata data_buf=0;
+  18   1              unsigned int xdata data_buf_bak=65530;
+  19   1              unsigned int xdata data_buf_bak1=65535;
+  20   1              unsigned int xdata data_len=0;
+  21   1              unsigned char xdata data_low=0;
+  22   1              unsigned char xdata data_high=0;
+  23   1              
+  24   1              unsigned char xdata write_flag=0;
+  25   1              unsigned char xdata write_buf[4]={0};
+  26   1              unsigned char xdata clear_flag=0;
+  27   1              
+  28   1              
+  29   1              unsigned int xdata distance=0;
+  30   1              unsigned int xdata tempratraure=0;
+  31   1              unsigned char xdata adc_read[4]={100,0,0,100};
+  32   1              unsigned int xdata adc_conver[4]={0};
+  33   1              
+  34   1              char xdata uart_tx_buf[50] = {0};
+  35   1              write_ds1302();
+  36   1              
+  37   1              Timer1Init();
+  38   1              UartInit();
+  39   1              freqInit();
+  40   1              
+  41   1              while(1)
+  42   1              {
+  43   2                      if(timer_10ms>=10)
+  44   2                      {
+  45   3                              timer_10ms=0;
+  46   3                              /*input*/
+  47   3                              key_pad_scan();
+  48   3                              /*process*/
+  49   3                              /*high*/
+  50   3                              if(timer_100ms>1000)
+  51   3                              {
+  52   4                                      timer_100ms=0;
+  53   4      //                              sprintf(uart_tx_buf, "#%ucm %.2fC %uHZ\r\n", (unsigned int)distance , (float)tempratraure / 100.0f, 
+             -(unsigned int)freq);
+C51 COMPILER V9.60.0.0   MAIN                                                              04/11/2024 23:35:06 PAGE 2   
+
+  54   4      //                              send_string(uart_tx_buf);
+  55   4      //                              sprintf(uart_tx_buf, "#%.2fV %.2fV %.2fV\r\n", (float)adc_conver[0] / 100.0f, (float)adc_conver[1] /
+             - 100.0f,(float)adc_conver[3] / 100.0f);
+  56   4      //                              send_string(uart_tx_buf);
+  57   4                                      
+  58   4                                      
+  59   4                              }
+  60   3                              
+  61   3                              if(timer_50ms>=50)
+  62   3                              {
+  63   4                                      timer_50ms=0;
+  64   4                                      
+  65   4                                      if(work_flag==0)
+  66   4                                      {
+  67   5                                              read_ds1302();
+  68   5                                      }
+  69   4                                      
+  70   4                                      if(work_flag==1)
+  71   4                                      {
+  72   5                                              if(write_flag==1)
+  73   5                                              {
+  74   6                                                      write_flag=0;
+  75   6                                                      write_eeprom(0x00,write_buf,4);
+  76   6                                              }
+  77   5                                      }
+  78   4                                      if(work_flag==5)
+  79   4                                      {
+  80   5                                              distance=read_echo();
+  81   5                                      }
+  82   4                                      
+  83   4                                      if(work_flag==3)
+  84   4                                      {
+  85   5                                              tempratraure=read_temp();
+  86   5                                      }
+  87   4                                      if(work_flag==4)
+  88   4                                      {
+  89   5                                              adc_read[1]=read_adc(0x01);
+  90   5                                              adc_conver[1]=(float)adc_read[1]*1.96;
+  91   5                                      }
+  92   4                                      if(work_flag==2)
+  93   4                                      {
+  94   5                                              adc_read[3]=read_adc(0x03);
+  95   5                                              adc_conver[3]=(float)adc_read[3]*1.96;
+  96   5                                      }
+  97   4                                      if(work_flag==6)
+  98   4                                      {
+  99   5                                              write_dac(adc_read[0]);
+ 100   5                                              adc_conver[0]=(float)adc_read[0]*1.96;
+ 101   5                                      }
+ 102   4                                      if(work_flag==7)
+ 103   4                                      {
+ 104   5                                                      if(uart_rx_flag==1)
+ 105   5                                              {
+ 106   6                                                      uart_rx_flag=0;
+ 107   6                                                      uart_rx_cnt=0;
+ 108   6                                                      
+ 109   6                                                      if(strcmp(uart_rx_buf,"#ST\r\n")==0)
+ 110   6                                                      {
+ 111   7                                                              sprintf(uart_tx_buf, "114514\r\n");
+ 112   7                                                              send_string(uart_tx_buf);
+ 113   7                                                              uart_tx_buf[0]=0;
+ 114   7                                                      }
+C51 COMPILER V9.60.0.0   MAIN                                                              04/11/2024 23:35:06 PAGE 3   
+
+ 115   6                                      }
+ 116   5                                              
+ 117   5                                      }
+ 118   4                                      if(++work_flag>7)work_flag=0;
+ 119   4                              }
+ 120   3                              /*key*/
+ 121   3                              if(key_state==255)
+ 122   3                              {
+ 123   4                                      if(key_value==4)
+ 124   4                                      {
+ 125   5                                              if(++screen>7)screen=0;
+ 126   5                                              
+ 127   5                                              if(screen==2)
+ 128   5                                              {
+ 129   6                                                      
+ 130   6                                                      write_buf[0]=time_10[0];
+ 131   6                                                      write_buf[1]=time_10[1];
+ 132   6                                                      write_buf[2]=(unsigned char )(data_buf>>8);
+ 133   6                                                      write_buf[3]=(unsigned char )data_buf;
+ 134   6                                                      
+ 135   6                                                      data_buf_bak1=data_buf_bak;
+ 136   6                                                      data_buf_bak=data_buf;
+ 137   6                                                      data_len=0;
+ 138   6                                                      data_buf=0;
+ 139   6                                                      
+ 140   6                                                      write_flag=1;
+ 141   6                                              }
+ 142   5                                      }
+ 143   4                                      if(screen==1)
+ 144   4                                      {
+ 145   5                                      if(key_value==5)
+ 146   5                                      {
+ 147   6                                              data_len=0;
+ 148   6                                              data_buf=0;
+ 149   6                                      }
+ 150   5                                      if(key_value==6)
+ 151   5                                      {
+ 152   6                                              if(data_len<4)
+ 153   6                                              {
+ 154   7                                                      data_buf=data_buf*10+0;
+ 155   7                                                      data_len++;
+ 156   7                                              }
+ 157   6                                      }
+ 158   5                                      
+ 159   5                                      if(key_value==10)
+ 160   5                                      {
+ 161   6                                              if(data_len<4)
+ 162   6                                              {
+ 163   7                                                      data_buf=data_buf*10+1;
+ 164   7                                                      data_len++;
+ 165   7                                              }
+ 166   6                                      }
+ 167   5                                      if(key_value==14)
+ 168   5                                      {
+ 169   6                                              if(data_len<4)
+ 170   6                                              {
+ 171   7                                                      data_buf=data_buf*10+2;
+ 172   7                                                      data_len++;
+ 173   7                                              }
+ 174   6                                      }
+ 175   5                                      if(key_value==18)
+ 176   5                                      {
+C51 COMPILER V9.60.0.0   MAIN                                                              04/11/2024 23:35:06 PAGE 4   
+
+ 177   6                                              if(data_len<4)
+ 178   6                                              {
+ 179   7                                                      data_buf=data_buf*10+3;
+ 180   7                                                      data_len++;
+ 181   7                                              }
+ 182   6                                      }
+ 183   5                                      if(key_value==9)
+ 184   5                                      {
+ 185   6                                              if(data_len<4)
+ 186   6                                              {
+ 187   7                                                      data_buf=data_buf*10+4;
+ 188   7                                                      data_len++;
+ 189   7                                              }
+ 190   6                                      }
+ 191   5                                      if(key_value==13)
+ 192   5                                      {
+ 193   6                                              if(data_len<4)
+ 194   6                                              {
+ 195   7                                                      data_buf=data_buf*10+5;
+ 196   7                                                      data_len++;
+ 197   7                                              }
+ 198   6                                      }
+ 199   5                                      if(key_value==17)
+ 200   5                                      {
+ 201   6                                              if(data_len<4)
+ 202   6                                              {
+ 203   7                                                      data_buf=data_buf*10+6;
+ 204   7                                                      data_len++;
+ 205   7                                              }
+ 206   6                                      }
+ 207   5                                      if(key_value==8)
+ 208   5                                      {
+ 209   6                                              if(data_len<4)
+ 210   6                                              {
+ 211   7                                                      data_buf=data_buf*10+7;
+ 212   7                                                      data_len++;
+ 213   7                                              }
+ 214   6                                      }
+ 215   5                                      if(key_value==12)
+ 216   5                                      {
+ 217   6                                              if(data_len<4)
+ 218   6                                              {
+ 219   7                                                      data_buf=data_buf*10+8;
+ 220   7                                                      data_len++;
+ 221   7                                              }
+ 222   6                                      }
+ 223   5                                      if(key_value==16)
+ 224   5                                      {
+ 225   6                                              if(data_len<4)
+ 226   6                                              {
+ 227   7                                                      data_buf=data_buf*10+9;
+ 228   7                                                      data_len++;
+ 229   7                                              }
+ 230   6                                      }
+ 231   5                                      }
+ 232   4                                      
+ 233   4                                      
+ 234   4                              }
+ 235   3                              
+ 236   3                              /*output*/
+ 237   3                              /*dig*/
+ 238   3                              digs=dig_buf[screen];
+C51 COMPILER V9.60.0.0   MAIN                                                              04/11/2024 23:35:06 PAGE 5   
+
+ 239   3                              
+ 240   3                              dig_buf[0][0]=time_10[0]/10;
+ 241   3                              dig_buf[0][1]=time_10[0]%10;
+ 242   3                              
+ 243   3                              dig_buf[0][3]=time_10[1]/10;
+ 244   3                              dig_buf[0][4]=time_10[1]%10;
+ 245   3                              
+ 246   3                              dig_buf[0][6]=time_10[2]/10;
+ 247   3                              dig_buf[0][7]=time_10[2]%10;
+ 248   3                              
+ 249   3                              dig_buf[1][4]=data_buf>=1000?data_buf/1000%10:16;
+ 250   3                              dig_buf[1][5]=data_buf>=100?data_buf/100%10:16;
+ 251   3                              dig_buf[1][6]=data_buf>=10?data_buf/10%10:16;
+ 252   3                              dig_buf[1][7]=data_buf>0?data_buf%10:16;
+ 253   3                              
+ 254   3                              dig_buf[2][3]=write_buf[0]/10;
+ 255   3                              dig_buf[2][4]=write_buf[0]%10;
+ 256   3                              
+ 257   3                              dig_buf[2][6]=write_buf[1]/10;
+ 258   3                              dig_buf[2][7]=write_buf[1]%10;
+ 259   3                              
+ 260   3                              dig_buf[3][4]=distance>=1000?distance/1000%10:16;
+ 261   3                              dig_buf[3][5]=distance>=100?distance/100%10:16;
+ 262   3                              dig_buf[3][6]=distance>=10?distance/10%10:16;
+ 263   3                              dig_buf[3][7]=distance%10;
+ 264   3                              
+ 265   3                              dig_buf[4][4]=tempratraure>=1000?tempratraure/1000%10:16;
+ 266   3                              dig_buf[4][5]=tempratraure>=100?tempratraure/100%10+32:16;
+ 267   3                              dig_buf[4][6]=tempratraure>=10?tempratraure/10%10:16;
+ 268   3                              dig_buf[4][7]=tempratraure%10;
+ 269   3                              
+ 270   3                              dig_buf[5][3]=freq>=10000?freq/10000%10:16;
+ 271   3                              dig_buf[5][4]=freq>=1000?freq/1000%10:16;
+ 272   3                              dig_buf[5][5]=freq>=100?freq/100%10:16;
+ 273   3                              dig_buf[5][6]=freq>=10?freq/10%10:16;
+ 274   3                              dig_buf[5][7]=freq%10;
+ 275   3                              
+ 276   3                              
+ 277   3                              dig_buf[6][1]=adc_conver[1]/100%10+32;
+ 278   3                              dig_buf[6][2]=adc_conver[1]/10%10;
+ 279   3                              dig_buf[6][3]=adc_conver[1]%10;
+ 280   3                              
+ 281   3                              dig_buf[6][5]=adc_conver[3]/100%10+32;
+ 282   3                              dig_buf[6][6]=adc_conver[3]/10%10;
+ 283   3                              dig_buf[6][7]=adc_conver[3]%10;
+ 284   3                              
+ 285   3                              dig_buf[7][5]=adc_conver[0]/100%10+32;
+ 286   3                              dig_buf[7][6]=adc_conver[0]/10%10;
+ 287   3                              dig_buf[7][7]=adc_conver[0]%10;
+ 288   3                              /*led*/
+ 289   3                              
+ 290   3                              if(screen==0)
+ 291   3                                      led_buf|=0x01;
+ 292   3                              else
+ 293   3                                      led_buf&=~0x01;
+ 294   3                              
+ 295   3                              if(screen==1)
+ 296   3                                      led_buf|=0x02;
+ 297   3                              else
+ 298   3                                      led_buf&=~0x02;
+ 299   3                              
+ 300   3                              if(screen==2)
+C51 COMPILER V9.60.0.0   MAIN                                                              04/11/2024 23:35:06 PAGE 6   
+
+ 301   3                                      led_buf|=0x04;
+ 302   3                              else
+ 303   3                                      led_buf&=~0x04;
+ 304   3                              
+ 305   3                              if(data_buf_bak>data_buf_bak1)
+ 306   3                                      led_buf|=0x08;
+ 307   3                              else
+ 308   3                                      led_buf&=~0x08;
+ 309   3                      }
+ 310   2                      
+ 311   2                      
+ 312   2              }
+ 313   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2333    ----
+   CONSTANT SIZE    =     81    ----
+   XDATA SIZE       =   ----      84
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

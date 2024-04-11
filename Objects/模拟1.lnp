@@ -1,0 +1,10 @@
+".\Objects\STARTUP.obj",
+".\Objects\ds1302.obj",
+".\Objects\echo.obj",
+".\Objects\hardware.obj",
+".\Objects\iic.obj",
+".\Objects\main.obj",
+".\Objects\onewire.obj",
+".\Objects\uart.obj" 
+TO ".\Objects\Ä£Äâ1" 
+PRINT(".\Listings\Ä£Äâ1.m51") RAMSIZE(256) 

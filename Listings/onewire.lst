@@ -1,0 +1,125 @@
+C51 COMPILER V9.60.0.0   ONEWIRE                                                           04/11/2024 23:36:35 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ONEWIRE
+OBJECT MODULE PLACED IN .\Objects\onewire.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE onewire.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\o
+                    -newire.lst) OBJECT(.\Objects\onewire.obj)
+
+line level    source
+
+   1          /*      #       单总线代码片段说明
+   2                  1.      本文件夹中提供的驱动代码供参赛选手完成程序设计参考。
+   3                  2.      参赛选手可以自行编写相关代码或以该代码为基础，根据所选单片机类型、运行速度和试题
+   4                          中对单片机时钟频率的要求，进行代码调试和修改。
+   5          */
+   6          #include "onewire.h"
+   7          sbit DQ=P1^4;
+   8          //
+   9          void Delay_OneWire(unsigned int t)  
+  10          {
+  11   1              unsigned char i;
+  12   1              while(t--){
+  13   2                      for(i=0;i<12;i++);
+  14   2              }
+  15   1      }
+  16          
+  17          //
+  18          void Write_DS18B20(unsigned char dat)
+  19          {
+  20   1              unsigned char i;
+  21   1              
+  22   1              for(i=0;i<8;i++)
+  23   1              {
+  24   2                      EA=0;
+  25   2                      DQ = 0;
+  26   2                      DQ = dat&0x01;
+  27   2                      Delay_OneWire(5);
+  28   2                      DQ = 1;
+  29   2                      dat >>= 1;
+  30   2                      EA=1;
+  31   2              }
+  32   1              Delay_OneWire(5);
+  33   1              
+  34   1      }
+  35          
+  36          //
+  37          unsigned char Read_DS18B20(void)
+  38          {
+  39   1              unsigned char i;
+  40   1              unsigned char dat;
+  41   1        
+  42   1              
+  43   1              for(i=0;i<8;i++)
+  44   1              {
+  45   2                      EA=0;
+  46   2                      DQ = 0;
+  47   2                      dat >>= 1;
+  48   2                      DQ = 1;
+  49   2                      Delay_OneWire(1);
+  50   2                      if(DQ)
+  51   2                      {
+  52   3                              dat |= 0x80;
+  53   3                      }           
+  54   2                      Delay_OneWire(5);
+C51 COMPILER V9.60.0.0   ONEWIRE                                                           04/11/2024 23:36:35 PAGE 2   
+
+  55   2                      EA=1;
+  56   2              }
+  57   1              
+  58   1              return dat;
+  59   1      }
+  60          
+  61          //
+  62          bit init_ds18b20(void)
+  63          {
+  64   1              bit initflag = 0;
+  65   1              
+  66   1              DQ = 1;
+  67   1              Delay_OneWire(12);
+  68   1              DQ = 0;
+  69   1              Delay_OneWire(80);
+  70   1              DQ = 1;
+  71   1              EA = 0; //------------关中断
+  72   1              Delay_OneWire(10); 
+  73   1          initflag = DQ;
+  74   1              EA = 1; //------------关中断    
+  75   1              Delay_OneWire(5);
+  76   1        
+  77   1              return initflag;
+  78   1      }
+  79          
+  80          unsigned int read_temp()
+  81          {
+  82   1              unsigned int temp_H=0,temp_L=0,temperature=0;
+  83   1              
+  84   1              init_ds18b20();
+  85   1              Write_DS18B20(0xcc);
+  86   1              Write_DS18B20(0x44);
+  87   1              
+  88   1              //Delay_OneWire(10);
+  89   1              init_ds18b20();
+  90   1              Write_DS18B20(0xcc);
+  91   1              Write_DS18B20(0xbe);
+  92   1              
+  93   1              temp_L = Read_DS18B20();
+  94   1              temp_H = Read_DS18B20();
+  95   1              temperature = (float)(temp_H << 8 | temp_L) * 6.25; //温度放大100倍存储，一般来说为0.0625
+  96   1      
+  97   1              return temperature;
+  98   1      }
+  99          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    232    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
